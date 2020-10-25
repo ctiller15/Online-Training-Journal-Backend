@@ -137,6 +137,32 @@ describe('GET /user/profile', () => {
 
 		expect(response.statusCode).toBe(401);
 	});
+
+	it('returns a successful response after logging in.', async () => {
+		const email = "example@example.com"
+		const password = "password"
+
+		await request(app)
+			.post('/signup')
+			.send({
+				email: email,
+				password: password
+			})
+
+		const signinResponse = await request(app)
+			.post('/login')
+			.send({
+				email: email,
+				password: password
+			})
+
+		const routeResponse = await request(app)
+			.get('/user/profile')
+			.set('Authorization', `Bearer ${signinResponse.body.token}`)
+
+		expect(routeResponse.statusCode).toBe(200);
+		expect(routeResponse.body.user.email).toBe(email);
+	})
 });
 
 afterEach( async () => {
