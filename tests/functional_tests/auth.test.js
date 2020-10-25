@@ -5,9 +5,14 @@ const db = require('../../src/models')
 let token;
 
 let tempdb = db;
+let transaction = "test";
+
+beforeAll( async () => {
+	await tempdb.sequelize.sync({ force: true })
+});
 
 beforeEach( async () => {
-	await tempdb.sequelize.sync({ force: true })
+	transaction = await tempdb.sequelize.transaction();
 });
 
 describe('POST /signup', () => {
@@ -33,10 +38,83 @@ describe('POST /signup', () => {
 	});
 
 	it('does not allow users with the same email to be created', async () => {
+		const email = 'testsexample@example.com'
+
+		const response = await request(app)
+			.post('/signup')
+			.send({
+				email: email,
+				password: 'password'
+			})
+
+		const secondResponse = await request(app)
+			.post('/signup')
+			.send({
+				email: email,
+				password: 'password'
+			})
+
+		expect(secondResponse.statusCode).toBe(500);
+	});
+});
+
+describe('POST /signin', () => {
+	it('signs in an existing user.', async () => {
+		const email = 'testsexample@example.com'
+		const password = 'password'
+
+		await request(app)
+			.post('/signup')
+			.send({
+				email: email,
+				password: password
+			})
+
+		const signinResponse = await request(app)
+			.post('/login')
+			.send({
+				email: email,
+				password: password
+			})
+
+		expect(signinResponse.statusCode).toBe(200);
+		expect(signinResponse.body.token.length).not.toEqual(0);
+	});
+
+	it('throws an error if the email does not exist.', async () => {
+		const email = 'testsexample@example.com'
+		const incorrectEmail = 'testsexamplefake@example.com'
+		const password = 'password'
+
+		await request(app)
+			.post('/signup')
+			.send({
+				email: email,
+				password: password
+			})
+
+		const signinResponse = await request(app)
+			.post('/login')
+			.send({
+				email: incorrectEmail,
+				password: password
+			})
+
+		expect(signinResponse.statusCode).toBe(404);
+		expect(signinResponse.body.token).toBeFalsy();
+		expect(signinResponse.body.error).toBe('User not found');
+	});
+
+	it('throws an error if the password is incorrect.', () => {
 		throw new Error('finish the test!');
 	});
 });
 
 afterEach( async () => {
+	await transaction.rollback();
+});
+
+afterAll( async () => {
 	await tempdb.sequelize.close()
 });
+
