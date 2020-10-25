@@ -130,6 +130,15 @@ describe('POST /signin', () => {
 	});
 });
 
+describe('GET /user/profile', () => {
+	it('does not allow you to access the route if you are not authorized', async () => {
+		const response = await request(app)
+			.get('/user/profile')
+
+		expect(response.statusCode).toBe(401);
+	});
+});
+
 afterEach( async () => {
 	await transaction.rollback();
 });
@@ -137,4 +146,3 @@ afterEach( async () => {
 afterAll( async () => {
 	await tempdb.sequelize.close()
 });
-
