@@ -4,13 +4,14 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "test": "jest --watch --maxWorkers=1"
+    "start": "nodemon server.js",
+    "test": "jest --watch"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "jest": "^26.6.0",
+    "nodemon": "^2.0.6",
     "supertest": "^5.0.0"
   },
   "dependencies": {

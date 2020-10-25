@@ -45,13 +45,13 @@ passport.use(
 				);
 
 				if(!user) {
-					return done(null, false, { message: 'User not found' });
+					return done(null, false, { responseCode: 404, message: 'User not found' });
 				}
 
 				const validate = await user.isValidPassword(password);
 
 				if(!validate) {
-					return done(null, false, { message: 'Wrong Password' });
+					return done(null, false, { responseCode: 401, message: 'Incorrect Password' });
 				}
 
 				return done(null, user, { message: 'Logged in Successfully' });

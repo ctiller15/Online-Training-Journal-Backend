@@ -105,8 +105,28 @@ describe('POST /signin', () => {
 		expect(signinResponse.body.error).toBe('User not found');
 	});
 
-	it('throws an error if the password is incorrect.', () => {
-		throw new Error('finish the test!');
+	it('throws an error if the password is incorrect.', async () => {
+		const email = 'testsexample@example.com'
+		const password = 'password'
+		const incorrectpassword = 'badpassword'
+
+		await request(app)
+			.post('/signup')
+			.send({
+				email: email,
+				password: password
+			})
+
+		const signinResponse = await request(app)
+			.post('/login')
+			.send({
+				email: email,
+				password: incorrectpassword
+			})
+
+		expect(signinResponse.statusCode).toBe(401);
+		expect(signinResponse.body.token).toBeFalsy();
+		expect(signinResponse.body.error).toBe('Incorrect Password');
 	});
 });
 
