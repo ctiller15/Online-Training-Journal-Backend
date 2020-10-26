@@ -29,18 +29,28 @@ beforeEach( async () => {
 	token = loginResponse.body.token
 });
 
-describe('GET /user/profile/pets', () => {
+describe('/user/profile/pets', () => {
 	it('allows an authorized user to create a pet.', async () => {
 		const response = await request(app)
-			.post('/user/pets/new')
+			.post('/user/profile/pets/new')
 			.set('Authorization', `bearer ${token}`)
 			.send({
 				name: 'Stanley'
 			})
 
 		expect(response.statusCode).toBe(200);
-		throw new Error('Finish the test!');
+		expect(await tempdb.models.Pet.findAll()).toHaveLength(1);
 	})
+
+	it('does not allow an unauthorized user to create a pet.', async () => {
+		const response = await request(app)
+			.post('/user/profile/pets/new')
+			.send({
+				name: 'Stanley'
+			})
+
+		expect(response.statusCode).toBe(401);
+	});
 })
 
 afterEach( async () => {

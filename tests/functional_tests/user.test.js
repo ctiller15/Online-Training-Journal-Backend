@@ -2,10 +2,7 @@ const request = require('supertest');
 const app = require('../../index');
 const db = require('../../src/models')
 
-let token;
-
 let tempdb = db;
-let transaction = "test";
 
 beforeAll( async () => {
 	await tempdb.sequelize.sync({ force: true })

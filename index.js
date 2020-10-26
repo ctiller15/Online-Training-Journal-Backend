@@ -2,8 +2,6 @@ const express = require('express');
 const passport = require('passport');
 const bodyParser = require('body-parser');
 
-const UserModel = require('./src/models/user');
-
 require('./src/auth/auth');
 
 const routes = require('./src/routes/routes');
