@@ -13,6 +13,7 @@ const sequelize = new Sequelize(
 const models = {
 	User: require('./user').user(sequelize, Sequelize),
 	Pet: require('./pet').pet(sequelize, Sequelize),
+	UserPet: require('./userpets').userPets(sequelize, Sequelize),
 };
 
 Object.keys(models).forEach(key => {

@@ -10,7 +10,12 @@ const pet = (sequelize, DataTypes) => {
 	});
 
 	Pet.associate = models => {
-		Pet.belongsToMany(models.User, { through: 'UserPets' });
+		Pet.belongsToMany(models.User, { 
+			through: 'UserPets', 
+			as: 'users', 
+			foreignKey: 'petId',
+			otherKey: 'userId'
+		});
 	};
 
 	return Pet;

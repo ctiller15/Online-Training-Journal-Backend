@@ -13,6 +13,30 @@ router.get(
 	}
 );
 
+router.get(
+	'/profile/pets',
+	async (req, res, next) => {
+		const user = await models.User.findOne({ where: { email: req.user.email }})
+
+		const pets = await models.Pet.findAll({
+			include: {
+				model: models.User,
+				where: {
+					id: user.id
+				},
+				through: { 
+					where: {
+						userId: user.id
+					}
+				},
+				as: 'users',
+			}
+		});
+
+		return res.send(pets);
+	}
+);
+
 router.post(
 	'/profile/pets/new',
 	async (req, res, next) => {
@@ -20,7 +44,8 @@ router.post(
 		
 		const newPet = await models.Pet.create({ name: req.body.name })
 		
-		await user.setPets(newPet);
+		await models.UserPet.create({ userId: user.id, petId: newPet.id})
+
 		return res.send(newPet);
 	}
 );

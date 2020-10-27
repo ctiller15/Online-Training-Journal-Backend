@@ -31,7 +31,13 @@ const user = (sequelize, DataTypes) => {
 	});
 
 	User.associate = models => {
-		User.belongsToMany(models.Pet, { through: 'UserPets'});
+		User.belongsToMany(
+			models.Pet, { 
+				through: 'UserPets', 
+				as: 'pets', 
+				foreignKey: 'userId',
+				otherKey: 'petId'
+			});
 	};
 	
 	User.prototype.isValidPassword = async function(password) {
