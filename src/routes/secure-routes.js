@@ -37,6 +37,7 @@ router.get(
 	}
 );
 
+
 router.post(
 	'/profile/pets/new',
 	async (req, res, next) => {
@@ -49,5 +50,82 @@ router.post(
 		return res.send(newPet);
 	}
 );
+
+router.get(
+	'/profile/pets/:petid',
+	async (req, res, next) => {
+		const user = await models.User.findOne({ where: { email: req.user.email } });		
+
+		const pet = await models.Pet.findOne({
+			where: { id: req.params.petid },
+			include: {
+				model: models.User,
+				where: {
+					id: user.id
+				},
+				through: { 
+					where: {
+						userId: user.id
+					}
+				},
+				as: 'users',
+			}
+		});
+
+		res.send(pet);
+	}
+)
+
+router.put('/profile/pets/:petid',
+	async (req, res, next) => {
+		const user = await models.User.findOne({ where: { email: req.user.email }});
+
+		const pet = await models.Pet.findOne({
+			where: { id: req.params.petid },
+			include: {
+				model: models.User,
+				where: {
+					id: user.id
+				},
+				through: { 
+					where: {
+						userId: user.id
+					}
+				},
+				as: 'users',
+			}
+		});
+
+		await pet.update(
+			{name: req.body.name}
+		);
+
+		res.send(pet);
+	})
+
+router.delete('/profile/pets/:petid', 
+		async (req, res, next) => {
+			const user = await models.User.findOne({ where: { email: req.user.email }});
+
+			const pet = await models.Pet.findOne({
+				where: { id: req.params.petid },
+				include: {
+					model: models.User,
+					where: {
+						id: user.id
+					},
+					through: { 
+						where: {
+							userId: user.id
+						}
+					},
+					as: 'users',
+				}
+			});
+
+			await pet.destroy();
+			next()
+		}
+)
 
 module.exports = router;

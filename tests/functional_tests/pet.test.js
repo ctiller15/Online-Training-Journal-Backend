@@ -41,6 +41,30 @@ beforeEach( async () => {
 });
 
 describe('/user/profile/pets', () => {
+	it('allows an authorized user to see a single pet.', async () => {
+		const pets = ['Stanley', 'Alana'];
+
+		const petIds = [];
+
+		for(let pet of pets){
+			const result = await request(app)
+				.post('/user/profile/pets/new')
+				.set('Authorization', `bearer ${token}`)
+				.send({
+					name: pet
+				})
+
+			petIds.push(result.body.id);
+		}
+
+		const response = await request(app)
+			.get(`/user/profile/pets/${petIds[0]}`)
+			.set('Authorization', `bearer ${token}`)
+
+		expect(response.statusCode).toBe(200);
+		expect(response.body.name).toBe(pets[0]);
+	});
+
 	it('allows an authorized user to see their pets', async () => {
 		const pets = ['Stanley', 'Alana'];
 
@@ -132,6 +156,55 @@ describe('/user/profile/pets', () => {
 
 		expect(response.statusCode).toBe(401);
 	});
+
+	it('allows an authorized user to edit a pet', async () => {
+		const createdPet = await request(app)
+			.post('/user/profile/pets/new')
+			.set('Authorization', `bearer ${token}`)
+			.send({
+				name: 'Stanley'
+			})
+		
+		const id = createdPet.body.id;
+
+		await request(app)
+			.put(`/user/profile/pets/${id}`)
+			.set('Authorization', `bearer ${token}`)
+			.send({
+				name: 'Alana'
+			})
+
+		const response = await request(app)
+			.get(`/user/profile/pets/${id}`)
+			.set('Authorization', `bearer ${token}`)
+
+		expect(response.statusCode).toBe(200);
+		expect(response.body.id).toBe(id);
+		expect(response.body.name).toBe('Alana');
+	});
+
+	it('allows an authorized user to remove a pet', async () => {
+		const createdPet = await request(app)
+			.post('/user/profile/pets/new')
+			.set('Authorization', `bearer ${token}`)
+			.send({
+				name: 'Stanley'
+			})
+		
+		const id = createdPet.body.id;
+
+		await request(app)
+			.delete(`/user/profile/pets/${id}`)
+			.set('Authorization', `bearer ${token}`)
+
+		const response = await request(app)
+			.get(`/user/profile/pets/${id}`)
+			.set('Authorization', `bearer ${token}`)
+
+		expect(response.statusCode).toBe(200);
+		expect(Object.keys(response.body)).toHaveLength(0);
+	});
+
 })
 
 afterAll( async () => {
