@@ -36,9 +36,20 @@ router.post(
 							}
 
 							const body = { _id: user._id, email: user.email };
-							const token = jwt.sign({ user: body }, process.env.SECRET_KEY);
+							const token = jwt.sign(
+								{ user: body },
+								process.env.SECRET_KEY,
+								{ expiresIn: '24h' }
+						);
 
-							return res.json({ token });
+							return res
+								.cookie('jwt', token, {
+									httpOnly: true,
+									secure: process.env.NODE_ENV === 'production',
+									expires: new Date(Date.now() + 24 * 3600000)
+								})
+								.status(200)
+								.json({ token });
 						}
 					);
 
@@ -49,5 +60,24 @@ router.post(
 		)(req, res, next);
 	}
 );
+
+router.post('/logout', 
+	async (req, res, next) => {
+
+		// Here, we force the cookie to expire.
+		if(req.cookies['jwt']){
+			res
+				.clearCookie('jwt')
+				.status(200)
+				.json({
+					message: 'You have logged out!'
+				})
+		}
+		else {
+			res.status(401).send()
+		}
+		next();
+	}
+)
 
 module.exports = router;

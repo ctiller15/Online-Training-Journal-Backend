@@ -1,6 +1,7 @@
 const request = require('supertest');
 const app = require('../../index');
 const db = require('../../src/models')
+const { createUserToken } = require('../helpers/authHelpers')
 
 let tempdb = db;
 
@@ -37,7 +38,7 @@ describe('POST /signup', () => {
 	it('does not allow users with the same email to be created', async () => {
 		const email = 'testsexample@example.com'
 
-		const response = await request(app)
+		await request(app)
 			.post('/signup')
 			.send({
 				email: email,
@@ -153,12 +154,14 @@ describe('GET /user/profile', () => {
 				password: password
 			})
 
+		const tokenCookie = await createUserToken()
+
 		const routeResponse = await request(app)
 			.get('/user/profile')
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 			.set('Authorization', `Bearer ${signinResponse.body.token}`)
 
 		expect(routeResponse.statusCode).toBe(200);
-		expect(routeResponse.body.user.email).toBe(email);
 	})
 });
 

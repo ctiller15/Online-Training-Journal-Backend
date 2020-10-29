@@ -1,55 +1,26 @@
 const request = require('supertest')
 const app = require('../../index')
 const db = require('../../src/models')
+const { createUserToken } = require('../helpers/authHelpers')
 
 let tempdb = db
-let transaction
-let token
-let secondUserToken
 
-const payload = {
-	email: 'pettestexample@example.com',
-	password: 'pettestpassword'
-}
-
-const secondUserPayload = {
-	email: 'secondpettestexample@example.com',
-	password: 'secondpettestpassword'
-}
-
-beforeEach( async () => {
+beforeAll( async () => {
 	await tempdb.sequelize.sync({ force: true, logging: false });
-
-	await request(app)
-		.post('/signup')
-		.send(payload)
-
-	await request(app)
-		.post('/signup')
-		.send(secondUserPayload)
-
-	const loginResponse = await request(app)
-		.post('/login')
-		.send(payload)
-
-	const secondLoginResponse = await request(app)
-		.post('/login')
-		.send(secondUserPayload)
-
-	token = loginResponse.body.token
-	secondUserToken = secondLoginResponse.body.token
 });
 
 describe('/user/profile/pets', () => {
-	it('allows an authorized user to see a single pet.', async () => {
+	it('does not allow an unauthorized user to see a single pet.', async () => {
 		const pets = ['Stanley', 'Alana'];
 
 		const petIds = [];
 
+		const tokenCookie = await createUserToken();
+
 		for(let pet of pets){
 			const result = await request(app)
 				.post('/user/profile/pets/new')
-				.set('Authorization', `bearer ${token}`)
+				.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 				.send({
 					name: pet
 				})
@@ -59,19 +30,45 @@ describe('/user/profile/pets', () => {
 
 		const response = await request(app)
 			.get(`/user/profile/pets/${petIds[0]}`)
-			.set('Authorization', `bearer ${token}`)
+
+		expect(response.statusCode).toBe(401);
+	});
+
+	it('allows an authorized user to see a single pet.', async () => {
+		const pets = ['Stanley', 'Alana'];
+
+		const petIds = [];
+
+		const tokenCookie = await createUserToken();
+
+		for(let pet of pets){
+			const result = await request(app)
+				.post('/user/profile/pets/new')
+				.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+				.send({
+					name: pet
+				})
+
+			petIds.push(result.body.id);
+		}
+
+		const response = await request(app)
+			.get(`/user/profile/pets/${petIds[0]}`)
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 
 		expect(response.statusCode).toBe(200);
 		expect(response.body.name).toBe(pets[0]);
 	});
 
-	it('allows an authorized user to see their pets', async () => {
+	it('does not allow an unauthorized user to see their pets', async () => {
 		const pets = ['Stanley', 'Alana'];
+
+		const tokenCookie = await createUserToken();
 
 		for(let pet of pets){
 			await request(app)
 				.post('/user/profile/pets/new')
-				.set('Authorization', `bearer ${token}`)
+				.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 				.send({
 					name: pet
 				})
@@ -79,7 +76,27 @@ describe('/user/profile/pets', () => {
 
 		const response = await request(app)
 			.get('/user/profile/pets')
-			.set('Authorization', `bearer ${token}`)
+
+		expect(response.statusCode).toBe(401);
+	});
+
+	it('allows an authorized user to see their pets', async () => {
+		const pets = ['Stanley', 'Alana'];
+
+		const tokenCookie = await createUserToken();
+
+		for(let pet of pets){
+			await request(app)
+				.post('/user/profile/pets/new')
+				.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+				.send({
+					name: pet
+				})
+		}
+
+		const response = await request(app)
+			.get('/user/profile/pets')
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 
 		expect(response.statusCode).toBe(200);
 		expect(response.body).toHaveLength(2);
@@ -92,10 +109,13 @@ describe('/user/profile/pets', () => {
 		const petSet1 = ['Stanley', 'Alana']
 		const petSet2 = ['Ziggy', 'Mo']
 
+		const tokenCookie = await createUserToken();
+		const secondUserTokenCookie = await createUserToken();
+
 		for(let pet of petSet1){
 			await request(app)
 				.post('/user/profile/pets/new')
-				.set('Authorization', `bearer ${token}`)
+				.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 				.send({
 					name: pet
 				})
@@ -104,7 +124,7 @@ describe('/user/profile/pets', () => {
 		for(let pet of petSet2){
 			await request(app)
 				.post('/user/profile/pets/new')
-				.set('Authorization', `bearer ${secondUserToken}`)
+				.set('Cookie', [`jwt=${secondUserTokenCookie['jwt']}`])
 				.send({
 					name: pet
 				})
@@ -112,11 +132,11 @@ describe('/user/profile/pets', () => {
 
 		const response = await request(app)
 			.get('/user/profile/pets')
-			.set('Authorization', `bearer ${token}`)
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 
 		const secondResponse = await request(app)
 			.get('/user/profile/pets')
-			.set('Authorization', `bearer ${secondUserToken}`)
+			.set('Cookie', [`jwt=${secondUserTokenCookie['jwt']}`])
 
 
 		expect(response.statusCode).toBe(200);
@@ -136,9 +156,11 @@ describe('/user/profile/pets', () => {
 	it('allows an authorized user to create a pet.', async () => {
 		const startLength = await tempdb.models.Pet.count();
 
+		const tokenCookie = await createUserToken();
+
 		const response = await request(app)
 			.post('/user/profile/pets/new')
-			.set('Authorization', `bearer ${token}`)
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 			.send({
 				name: 'Stanley'
 			})
@@ -157,10 +179,12 @@ describe('/user/profile/pets', () => {
 		expect(response.statusCode).toBe(401);
 	});
 
-	it('allows an authorized user to edit a pet', async () => {
+	it('does not allow an unauthorized user to edit a pet', async () => {
+		const tokenCookie = await createUserToken();
+
 		const createdPet = await request(app)
 			.post('/user/profile/pets/new')
-			.set('Authorization', `bearer ${token}`)
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 			.send({
 				name: 'Stanley'
 			})
@@ -169,24 +193,51 @@ describe('/user/profile/pets', () => {
 
 		await request(app)
 			.put(`/user/profile/pets/${id}`)
-			.set('Authorization', `bearer ${token}`)
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 			.send({
 				name: 'Alana'
 			})
 
 		const response = await request(app)
 			.get(`/user/profile/pets/${id}`)
-			.set('Authorization', `bearer ${token}`)
+
+		expect(response.statusCode).toBe(401);
+	});
+
+	it('allows an authorized user to edit a pet', async () => {
+		const tokenCookie = await createUserToken();
+
+		const createdPet = await request(app)
+			.post('/user/profile/pets/new')
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+			.send({
+				name: 'Stanley'
+			})
+		
+		const id = createdPet.body.id;
+
+		await request(app)
+			.put(`/user/profile/pets/${id}`)
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+			.send({
+				name: 'Alana'
+			})
+
+		const response = await request(app)
+			.get(`/user/profile/pets/${id}`)
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 
 		expect(response.statusCode).toBe(200);
 		expect(response.body.id).toBe(id);
 		expect(response.body.name).toBe('Alana');
 	});
 
-	it('allows an authorized user to remove a pet', async () => {
+	it('does not allow an unauthorized user to remove a pet', async () => {
+		const tokenCookie = await createUserToken();
+
 		const createdPet = await request(app)
 			.post('/user/profile/pets/new')
-			.set('Authorization', `bearer ${token}`)
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 			.send({
 				name: 'Stanley'
 			})
@@ -195,16 +246,77 @@ describe('/user/profile/pets', () => {
 
 		await request(app)
 			.delete(`/user/profile/pets/${id}`)
-			.set('Authorization', `bearer ${token}`)
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 
 		const response = await request(app)
 			.get(`/user/profile/pets/${id}`)
-			.set('Authorization', `bearer ${token}`)
+
+		expect(response.statusCode).toBe(401);
+	});
+
+	it('allows an authorized user to remove a pet', async () => {
+		const tokenCookie = await createUserToken();
+
+		const createdPet = await request(app)
+			.post('/user/profile/pets/new')
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+			.send({
+				name: 'Stanley'
+			})
+		
+		const id = createdPet.body.id;
+
+		await request(app)
+			.delete(`/user/profile/pets/${id}`)
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+
+		const response = await request(app)
+			.get(`/user/profile/pets/${id}`)
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 
 		expect(response.statusCode).toBe(200);
 		expect(Object.keys(response.body)).toHaveLength(0);
 	});
 
+	it('logs out a user by expiring their cookie', async () => {
+		const tokenCookie = await createUserToken();
+
+		const pets = ['Stanley', 'Alana', 'Hulk'];
+
+		for(let pet of pets){
+			await request(app)
+				.post('/user/profile/pets/new')
+				.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+				.send({
+					name: pet
+				})
+		}
+
+		const response = await request(app)
+			.get('/user/profile/pets')
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+
+		expect(response.statusCode).toBe(200);
+		expect(response.body).toHaveLength(pets.length);
+		for(let i = 0; i < pets.length; i++){
+			expect(response.body[i].name).toBe(pets[i]);
+		}
+
+		const logout = await request(app)
+			.post('/logout')
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+			.send({})
+
+		expect(logout.statusCode).toBe(200);
+	})
+
+	it('does not allow an unauthenticated user to log out', async () => {
+		const response = await request(app)
+			.post('/logout')
+			.send({})
+
+		expect(response.statusCode).toBe(401);
+	})
 })
 
 afterAll( async () => {

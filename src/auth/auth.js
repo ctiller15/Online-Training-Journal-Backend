@@ -5,6 +5,16 @@ const ExtractJWT = require('passport-jwt').ExtractJwt;
 
 const { models } = require('../models/index');
 
+const cookieExtractor = req => {
+	let jwt = null
+
+	if (req && req.cookies) {
+		jwt = req.cookies['jwt']
+	}
+
+	return jwt
+}
+
 passport.use(
 	'signup',
 	new localStrategy(
@@ -62,15 +72,15 @@ passport.use(
 	)
 );
 
-passport.use(
+passport.use('jwt',
 	new JWTstrategy(
 		{
 			secretOrKey: process.env.SECRET_KEY,
-			jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken()
+			jwtFromRequest: cookieExtractor
 		},
-		async (token, done) => {
+		async (jwtPayload, done) => {
 			try {
-				return done(null, token.user);
+				return done(null, jwtPayload.user);
 			} catch (error) {
 				done(error);
 			}
