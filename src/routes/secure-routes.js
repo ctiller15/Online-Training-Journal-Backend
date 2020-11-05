@@ -3,6 +3,13 @@ const router = express.Router();
 
 const { models } = require('../models/index');
 
+router.get('/checkAuthentication', 
+	(req, res, next) => {
+		res.json({
+			authenticated: true
+		})
+	});
+
 router.get(
 	'/profile',
 	(req, res, next) => {

@@ -128,6 +128,19 @@ describe('POST /signin', () => {
 	});
 });
 
+describe('GET /user/checkAuthentication', () => {
+	it('returns true if the user is currently authenticated', async () => {
+		const tokenCookie = await createUserToken()
+
+		const routeResponse = await request(app)
+			.get('/user/checkAuthentication')
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+
+		expect(routeResponse.statusCode).toBe(200);
+		expect(routeResponse.body.authenticated).toBe(true);
+	});
+});
+
 describe('GET /user/profile', () => {
 	it('does not allow you to access the route if you are not authorized', async () => {
 		const response = await request(app)
