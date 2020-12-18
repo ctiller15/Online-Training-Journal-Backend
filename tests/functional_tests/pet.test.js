@@ -319,6 +319,54 @@ describe('/user/profile/pets', () => {
 	})
 })
 
+describe('/user/profile/pets/infoTags', () => {
+	
+	it('creates a new infoTag in the database for an updated', async () => {
+		const startLength = await tempdb.models.InfoTag.count();
+
+		const tokenCookie = await createUserToken();
+
+		const infoTag = {
+			text: 'sit',
+			type: 3
+		}
+
+		const newPet = "stanley"
+
+		const petResult = await request(app)
+			.post('/user/profile/pets/new')
+			.set('Cookie', [`jwt${tokenCookie['jwt']}`])
+			.send({
+				name: newPet
+			});
+
+
+		const petTagResult = await request(app)
+			.put(`/user/profile/pets`)
+			.set('Cookie', [`jwt${tokenCookie['jwt']}`])
+			.send({
+				
+			})
+
+		const id = petResult.body.id;
+			
+		await request(app)
+			.put(`/user/profile/pets/${id}`)
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+			.send({
+				name: newPet,
+				infoTags: [infoTag]
+			})
+
+		expect(await tempdb.models.InfoTag.count()).toBe(startLength + 1);
+
+
+		throw new Error('Finish the test!');
+	});
+
+});
+
+
 afterAll( async () => {
 	await tempdb.sequelize.close()
 });
