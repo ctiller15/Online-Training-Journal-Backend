@@ -321,7 +321,46 @@ describe('/user/profile/pets', () => {
 
 describe('/user/profile/pets/infoTags', () => {
 	
-	it('creates a new infoTag in the database for an updated', async () => {
+	it('returns infoTags when querying for a specific pet.', async () => {
+		const tokenCookie = await createUserToken();
+
+		const infoTags = [{
+			text: 'sit',
+			type: 3
+			}, 
+			{
+				text: 'stay',
+				type: 3
+			} ]
+
+		const newPet = "stanley"
+
+		const petResult = await request(app)
+			.post('/user/profile/pets/new')
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+			.send({
+				name: newPet
+			});
+
+		const petId = petResult.body.id;
+
+		await request(app)
+			.put(`/user/profile/pets/${petId}`)
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+			.send({
+				name: newPet,
+				infoTags: infoTags,
+			});
+
+		const petResponse = await request(app)
+			.get(`/user/profile/pets/${petId}`)
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+
+		expect(petResponse.body.infoTags.tricks).toHaveLength(infoTags.length);
+		throw new Error('Finish the test!');
+	});
+
+	it('creates a new infoTag in the database for an updated pet', async () => {
 		const startLength = await tempdb.models.InfoTag.count();
 
 		const tokenCookie = await createUserToken();
@@ -351,7 +390,16 @@ describe('/user/profile/pets/infoTags', () => {
 			});
 
 		expect(await tempdb.models.InfoTag.count()).toBe(startLength + 1);
-		expect(await tempdb.models.InfoTag.findAll({where:{ text: infoTag.text }})).toHaveLength(1);
+		expect(
+			await tempdb.models.InfoTag.findAll({
+				where:{ text: infoTag.text }, 
+				include: {
+					model: tempdb.models.Pet,
+					where: {
+						id: petId
+					},
+					as: 'pets'
+		}})).toHaveLength(1);
 	});
 
 });
