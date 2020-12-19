@@ -14,6 +14,8 @@ const models = {
 	User: require('./user').user(sequelize, Sequelize),
 	Pet: require('./pet').pet(sequelize, Sequelize),
 	UserPet: require('./userpets').userPets(sequelize, Sequelize),
+	InfoTag: require('./infoTag').infoTag(sequelize, Sequelize),
+	PetInfoTags: require('./petInfoTags').petInfoTags(sequelize, Sequelize),
 };
 
 Object.keys(models).forEach(key => {

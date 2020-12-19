@@ -16,6 +16,13 @@ const pet = (sequelize, DataTypes) => {
 			foreignKey: 'petId',
 			otherKey: 'userId'
 		});
+
+		Pet.belongsToMany(models.InfoTag, {
+			through: 'PetInfoTags',
+			as: 'infoTags',
+			foreignKey: 'petId',
+			otherKey: 'infoTagId'
+		});
 	};
 
 	return Pet;
