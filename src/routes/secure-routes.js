@@ -85,6 +85,11 @@ router.get(
 
 router.put('/profile/pets/:petid',
 	async (req, res, next) => {
+		console.log(req.body);
+		const tags = req.params.infoTags;
+
+		console.log(tags);
+
 		const user = await models.User.findOne({ where: { email: req.user.email }});
 
 		const pet = await models.Pet.findOne({

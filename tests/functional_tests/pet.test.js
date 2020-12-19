@@ -335,28 +335,35 @@ describe('/user/profile/pets/infoTags', () => {
 
 		const petResult = await request(app)
 			.post('/user/profile/pets/new')
-			.set('Cookie', [`jwt${tokenCookie['jwt']}`])
+			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 			.send({
 				name: newPet
 			});
 
+		const petId = petResult.body.id;
+
+		//await request(app)
+		//	.put(`/user/profile/pets/${id}`)
+		//	.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+		//	.send({
+		//		name: 'Alana'
+		//	})
 
 		const petTagResult = await request(app)
-			.put(`/user/profile/pets`)
-			.set('Cookie', [`jwt${tokenCookie['jwt']}`])
-			.send({
-				
-			})
-
-		const id = petResult.body.id;
-			
-		await request(app)
-			.put(`/user/profile/pets/${id}`)
+			.put(`/user/profile/pets/${petId}`)
 			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 			.send({
 				name: newPet,
-				infoTags: [infoTag]
-			})
+				infoTags: [infoTag],
+			});
+			
+	//	await request(app)
+	//		.put(`/user/profile/pets/${id}`)
+	//		.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
+	//		.send({
+	//			name: newPet,
+	//			infoTags: [infoTag]
+	//		})
 
 		expect(await tempdb.models.InfoTag.count()).toBe(startLength + 1);
 
