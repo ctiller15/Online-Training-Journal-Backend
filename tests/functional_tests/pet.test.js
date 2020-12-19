@@ -342,13 +342,6 @@ describe('/user/profile/pets/infoTags', () => {
 
 		const petId = petResult.body.id;
 
-		//await request(app)
-		//	.put(`/user/profile/pets/${id}`)
-		//	.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
-		//	.send({
-		//		name: 'Alana'
-		//	})
-
 		const petTagResult = await request(app)
 			.put(`/user/profile/pets/${petId}`)
 			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
@@ -356,19 +349,9 @@ describe('/user/profile/pets/infoTags', () => {
 				name: newPet,
 				infoTags: [infoTag],
 			});
-			
-	//	await request(app)
-	//		.put(`/user/profile/pets/${id}`)
-	//		.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
-	//		.send({
-	//			name: newPet,
-	//			infoTags: [infoTag]
-	//		})
 
 		expect(await tempdb.models.InfoTag.count()).toBe(startLength + 1);
-
-
-		throw new Error('Finish the test!');
+		expect(await tempdb.models.InfoTag.findAll({where:{ text: infoTag.text }})).toHaveLength(1);
 	});
 
 });

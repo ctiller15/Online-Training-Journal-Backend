@@ -3,6 +3,8 @@ const router = express.Router();
 
 const { models } = require('../models/index');
 
+const { handlePetEdits } = require('../handlers/editPetHandler');
+
 router.get('/checkAuthentication', 
 	(req, res, next) => {
 		res.json({
@@ -85,34 +87,9 @@ router.get(
 
 router.put('/profile/pets/:petid',
 	async (req, res, next) => {
-		console.log(req.body);
-		const tags = req.params.infoTags;
+		const response = await handlePetEdits(req.user.email, req.params.petid, req.body);
 
-		console.log(tags);
-
-		const user = await models.User.findOne({ where: { email: req.user.email }});
-
-		const pet = await models.Pet.findOne({
-			where: { id: req.params.petid },
-			include: {
-				model: models.User,
-				where: {
-					id: user.id
-				},
-				through: { 
-					where: {
-						userId: user.id
-					}
-				},
-				as: 'users',
-			}
-		});
-
-		await pet.update(
-			{name: req.body.name}
-		);
-
-		res.send(pet);
+		res.send(response);
 	})
 
 router.delete('/profile/pets/:petid', 
