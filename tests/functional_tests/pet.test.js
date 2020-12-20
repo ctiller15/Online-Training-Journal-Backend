@@ -2,11 +2,12 @@ const request = require('supertest')
 const app = require('../../index')
 const db = require('../../src/models')
 const { createUserToken } = require('../helpers/authHelpers')
+const { initializeDatabase } = require('../helpers/dbHelpers/testDbInit')
 
 let tempdb = db
 
 beforeAll( async () => {
-	await tempdb.sequelize.sync({ force: true, logging: false });
+	await initializeDatabase(tempdb);
 });
 
 describe('/user/profile/pets', () => {
@@ -326,11 +327,11 @@ describe('/user/profile/pets/infoTags', () => {
 
 		const infoTags = [{
 			text: 'sit',
-			type: 3
+			infoTagTypeId: 3
 			}, 
 			{
 				text: 'stay',
-				type: 3
+				infoTagTypeId: 3
 			} ]
 
 		const newPet = "stanley"
@@ -356,8 +357,7 @@ describe('/user/profile/pets/infoTags', () => {
 			.get(`/user/profile/pets/${petId}`)
 			.set('Cookie', [`jwt=${tokenCookie['jwt']}`])
 
-		expect(petResponse.body.infoTags.tricks).toHaveLength(infoTags.length);
-		throw new Error('Finish the test!');
+		expect(petResponse.body.tricks).toHaveLength(infoTags.length);
 	});
 
 	it('creates a new infoTag in the database for an updated pet', async () => {

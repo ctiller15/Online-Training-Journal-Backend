@@ -4,6 +4,9 @@ const router = express.Router();
 const { models } = require('../models/index');
 
 const { handlePetEdits } = require('../handlers/editPetHandler');
+const { getUserPetById } = require('../handlers/getPetHandler');
+
+const { serializePetIdResponse } = require('../serializers/petResponseSerializer');
 
 router.get('/checkAuthentication', 
 	(req, res, next) => {
@@ -63,25 +66,11 @@ router.post(
 router.get(
 	'/profile/pets/:petid',
 	async (req, res, next) => {
-		const user = await models.User.findOne({ where: { email: req.user.email } });		
+		const result = await getUserPetById(req.user.email, req.params.petid);
 
-		const pet = await models.Pet.findOne({
-			where: { id: req.params.petid },
-			include: {
-				model: models.User,
-				where: {
-					id: user.id
-				},
-				through: { 
-					where: {
-						userId: user.id
-					}
-				},
-				as: 'users',
-			}
-		});
+		const response = serializePetIdResponse(result);
 
-		res.send(pet);
+		res.send(response);
 	}
 )
 

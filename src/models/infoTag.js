@@ -16,6 +16,8 @@ const infoTag = (sequelize, DataTypes) => {
 			foreignKey: 'infoTagId',
 			otherKey: 'petId'
 		})
+
+		InfoTag.belongsTo(models.InfoTagType);
 	}
 
 	return InfoTag;
